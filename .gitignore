@@ -1,0 +1,24 @@
+# Build artifacts
+/target/
+/dist/
+node_modules/
+src-tauri/target/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Private routes, never in the public tree (see build.rs)
+/.relay_key
+/.exits
+/.group
+/src/relay.rs
+/src/exits.rs
+/src-tauri/src/relay.rs
+/src-tauri/src/exits.rs

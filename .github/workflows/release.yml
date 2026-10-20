@@ -1,0 +1,158 @@
+name: Выпуск релиза
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Версия релиза (например 2.22.0 или 2026.1020.1500)'
+        required: false
+        default: ''
+      notes:
+        description: 'Описание изменений (release notes)'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Сборка (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            os: macos
+            args: '--bundles dmg'
+          - platform: 'windows-latest'
+            os: windows
+            args: '--bundles nsis'
+          - platform: 'ubuntu-22.04'
+            os: linux
+            args: '--bundles appimage,deb'
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Клонирование репозитория
+        uses: actions/checkout@v4
+
+      - name: Установка Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Кэширование Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'src-tauri'
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Системные зависимости (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libxdo-dev
+
+      - name: Установка зависимостей frontend
+        run: npm ci
+
+      - name: Сборка frontend
+        run: npm run build
+
+      - name: Сборка приложения Tauri v2
+        run: npm run tauri build -- ${{ matrix.args }}
+
+      - name: Поиск и подготовка артефактов (macOS)
+        if: matrix.os == 'macos'
+        run: |
+          mkdir -p artifacts
+          cp target/release/bundle/dmg/*.dmg artifacts/ 2>/dev/null || cp target/release/bundle/macos/*.app.tar.gz artifacts/ 2>/dev/null || true
+
+      - name: Поиск и подготовка артефактов (Windows)
+        if: matrix.os == 'windows'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          cp target/release/bundle/nsis/*-setup.exe artifacts/ 2>/dev/null || cp target/release/ag_unlocker.exe artifacts/AG_Unlocker_x64.exe 2>/dev/null || true
+
+      - name: Поиск и подготовка артефактов (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          mkdir -p artifacts
+          cp target/release/bundle/appimage/*.AppImage artifacts/ 2>/dev/null || true
+          cp target/release/bundle/deb/*.deb artifacts/ 2>/dev/null || true
+
+      - name: Сохранение артефактов
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}
+          path: artifacts/*
+          if-no-files-found: warn
+
+  publish:
+    name: Публикация GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Клонирование репозитория
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Загрузка всех собранных артефактов
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: Определение номера версии и заметок
+        id: release_info
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="v${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="v$(node -p "require('./package.json').version")"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          # Подготовка заметок к выпуску
+          if [ -n "${{ github.event.inputs.notes }}" ]; then
+            echo "${{ github.event.inputs.notes }}" > release_notes.md
+          else
+            echo "### Antigravity Unlocker $TAG" > release_notes.md
+            echo "" >> release_notes.md
+            echo "- Точный приборный интерфейс в стиле Goniometer" >> release_notes.md
+            echo "- Переход на Tauri v2 (быстрый запуск и минимальное потребление памяти)" >> release_notes.md
+            echo "- Полная поддержка обхода региональных ограничений без сторонних каналов" >> release_notes.md
+          fi
+
+          mkdir -p release-files
+          find all-artifacts -type f -exec cp {} release-files/ \;
+          ls -la release-files/
+
+      - name: Создание релиза на GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: Antigravity Unlocker ${{ steps.release_info.outputs.tag }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: release-files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

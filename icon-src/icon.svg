@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Значок Antigravity Unlocker: приборный стиль гониофотометра — открытый замок и расходящийся вверх луч антигравитации. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2d31"/>
+      <stop offset="1" stop-color="#17181b"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#6b9bf5" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3574f0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#bg)"/>
+  <rect x="101" y="101" width="822" height="822" rx="183" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+  <path d="M512 220 L352 760 L672 760 Z" fill="url(#beam)"/>
+  <g fill="none" stroke="#6b9bf5" stroke-width="44" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Открытая дужка замка: справа зазор, сквозь который выходит луч -->
+    <path d="M 372 520 V 380 a 140 140 0 0 1 280 0 v 50"/>
+    <!-- Корпус замка с фирменным синим заполнением -->
+    <rect x="302" y="520" width="420" height="240" rx="44" fill="#2e4570"/>
+    <!-- Расходящиеся вверх лучи (антигравитация) -->
+    <path d="M 512 520 V 220"/>
+    <path d="M 512 520 L 380 250"/>
+    <path d="M 512 520 L 644 250"/>
+  </g>
+</svg>

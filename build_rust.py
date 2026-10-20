@@ -897,8 +897,7 @@ def main():
 
     # `.secrets.json` is now purely an owner marker: when present, this machine
     # is the author's, so the key generator is produced and fresh keys printed.
-    # A clone from GitHub has no such file, so it builds a working binary but
-    # generates NO keys - users must fetch a free key from t.me/nova_txt.
+    # A clone from GitHub has no such file, so it builds a working binary.
     is_owner = os.path.exists(".secrets.json")
 
     main_rs_path = r"src\main.rs"
@@ -1246,14 +1245,14 @@ if __name__ == "__main__":
         if is_owner:
             print(f"Ваш генератор ключей для этой версии: {dist_keygen_path}")
             print(f"\n[i] Ключи привязаны к версии {cargo_version}: на следующем релизе")
-            print("    (после смены VERSION здесь) они перестанут подходить, и людям")
-            print("    понадобится новый ключ из t.me/nova_txt.")
+            print("    (после смены VERSION здесь) они перестанут подходить, и")
+            print("    понадобятся новые ключи.")
             # Auto-generate some keys for convenience.
             print(f"\n5 ключей для версии {cargo_version}:")
             # -B: no __pycache__ left beside the sources for one import.
             subprocess.check_call(["python", "-B", "-c", "import dist_keygen; [print(dist_keygen.generate_key()) for _ in range(5)]"])
         else:
-            print("\nДля работы необходим ключ - получить его можно бесплатно в группе t.me/nova_txt")
+            print("\nДля работы необходим ключ.")
 
     except subprocess.CalledProcessError as e:
         # No cache is pruned after a failed build: see "Build caches" above.
