@@ -87,7 +87,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts
-          cp target/release/bundle/nsis/*-setup.exe artifacts/ 2>/dev/null || cp target/release/ag_unlocker.exe artifacts/AG_Unlocker_x64.exe 2>/dev/null || true
+          cp target/release/bundle/nsis/*.exe artifacts/ 2>/dev/null || true
+          cp target/release/ag_unlocker.exe artifacts/AG_Unlocker_2.22.0_x64_portable.exe 2>/dev/null || true
 
       - name: Поиск и подготовка артефактов (Linux)
         if: matrix.os == 'linux'
@@ -106,6 +107,7 @@ jobs:
   publish:
     name: Публикация GitHub Release
     needs: build
+    if: always() && !cancelled() && (needs.build.result == 'success' || needs.build.result == 'failure')
     runs-on: ubuntu-latest
     steps:
       - name: Клонирование репозитория
@@ -144,6 +146,11 @@ jobs:
           mkdir -p release-files
           find all-artifacts -type f -exec cp {} release-files/ \;
           ls -la release-files/
+          count=$(find release-files -type f | wc -l)
+          if [ "$count" -eq 0 ]; then
+            echo "::error::Нет собранных артефактов для публикации"
+            exit 1
+          fi
 
       - name: Создание релиза на GitHub
         uses: softprops/action-gh-release@v2

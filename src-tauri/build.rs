@@ -1,5 +1,3 @@
-extern crate winres;
-
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
@@ -86,7 +84,7 @@ fn main() {
     let canary_src = fs::read_to_string("src/canary.rs").expect("src/canary.rs is missing");
     let seed = const_from_canary_rs(&canary_src, "CANARY_SEED");
     let sep = const_from_canary_rs(&canary_src, "CANARY_SEP");
-    let static_canary = const_from_canary_rs(&canary_src, "STATIC_CANARY");
+    let _static_canary = const_from_canary_rs(&canary_src, "STATIC_CANARY");
     let release_token = token_for(&seed, &sep, &version);
 
     // Emitted for canary.rs to include!(), so the token itself is a literal in
@@ -188,35 +186,6 @@ fn main() {
         "cargo:warning=private routes: relay={} exits={} group={}",
         relay, exits, group
     );
-
-    if env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
-        let mut res = winres::WindowsResource::new();
-        res.set_icon("icon.ico");
-        res.set("FileDescription", "Antigravity Configuration Tool");
-        res.set("ProductName", "Antigravity Configurator");
-        res.set("LegalCopyright", "Brent");
-        // Copyright management information in the version resource: survives
-        // UPX (the resource directory stays readable on the packed file) and is
-        // visible in the file's Properties dialog without any tooling.
-        res.set(
-            "LegalTrademarks",
-            "Antigravity Unlocker (c) 2026 Brent - github.com/archiZubarev/Antigravity",
-        );
-        res.set(
-            "Comments",
-            &format!(
-                "Antigravity Unlocker (c) 2026 Brent. \
-                 Origin: github.com/archiZubarev/Antigravity. \
-                 Non-Commercial & Restricted Use License - derivative works not permitted. \
-                 mark {} build {}",
-                static_canary, release_token
-            ),
-        );
-        // Kept in step with Cargo.toml, which build_rust.py rewrites per release.
-        res.set("FileVersion", &version);
-        res.set("ProductVersion", &version);
-        res.compile().unwrap();
-    }
 
     tauri_build::build();
 }
