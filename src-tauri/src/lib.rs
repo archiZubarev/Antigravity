@@ -360,7 +360,9 @@ fn open_system_settings() {
     #[cfg(target_os = "macos")]
     crate::utils::open_url(crate::elevate::APP_MANAGEMENT_PANE);
     #[cfg(target_os = "windows")]
-    crate::utils::open_windows_developer_settings();
+    crate::utils::open_url("ms-settings:developers");
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    crate::utils::open_url("");
 }
 
 #[tauri::command]
